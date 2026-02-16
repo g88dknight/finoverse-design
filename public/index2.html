@@ -233,7 +233,7 @@
                 right: 0;
                 width: 100vw;
                 height: var(--mobile-preview-h);
-                z-index: 30;
+                z-index: 20;
                 border-top: 1px solid var(--border-subtle);
                 border-bottom: 1px solid var(--border-subtle);
             }
@@ -247,7 +247,12 @@
             }
 
             .sidebar-scroll {
-                padding-top: calc(var(--mobile-preview-h) + 16px);
+                position: relative;
+                z-index: 35;
+                margin-top: var(--mobile-preview-h);
+                height: calc(100vh - var(--mobile-header-h) - var(--mobile-preview-h));
+                padding-top: 16px;
+                background: var(--bg-panel);
             }
         }
     </style>
