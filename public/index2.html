@@ -212,7 +212,7 @@
         @media (max-width: 767px) {
             :root {
                 --mobile-header-h: 88px;
-                --mobile-preview-h: 180px;
+                --mobile-preview-h: 100vw;
             }
 
             aside {
@@ -231,6 +231,7 @@
                 top: var(--mobile-header-h);
                 left: 0;
                 right: 0;
+                width: 100vw;
                 height: var(--mobile-preview-h);
                 z-index: 30;
                 border-top: 1px solid var(--border-subtle);
@@ -238,8 +239,11 @@
             }
 
             #dropZone #canvas {
-                max-width: 96%;
-                max-height: 92%;
+                width: 100% !important;
+                height: 100% !important;
+                max-width: none !important;
+                max-height: none !important;
+                object-fit: contain;
             }
 
             .sidebar-scroll {
