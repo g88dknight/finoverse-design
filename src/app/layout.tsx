@@ -12,9 +12,35 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 export const metadata: Metadata = {
-  title: "Finoverse Tonemaker",
-  description: "Next.js wrapper for the Finoverse web effector",
+  metadataBase: new URL(siteUrl),
+  title: "Finoverse Design",
+  description: "Finoverse Design web effector for SVG, PNG, and MP4 exports.",
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
+  openGraph: {
+    title: "Finoverse Design",
+    description: "Finoverse Design web effector for SVG, PNG, and MP4 exports.",
+    images: [
+      {
+        url: "/social-preview.png",
+        width: 1200,
+        height: 630,
+        alt: "Finoverse Design social preview",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Finoverse Design",
+    description: "Finoverse Design web effector for SVG, PNG, and MP4 exports.",
+    images: ["/social-preview.png"],
+  },
 };
 
 export default function RootLayout({
