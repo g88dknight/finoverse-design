@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finoverse Tonemaker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+        
+        /* Geist Mono */
+        @font-face {
+            font-family: 'Geist Mono';
+            src: url('https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/GeistMono-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Mono';
+            src: url('https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-mono/GeistMono-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+
+        /* Geist Sans */
+        @font-face {
+            font-family: 'Geist Sans';
+            src: url('https://cdn.jsdelivr.net/npm/geist@1.0.0/dist/fonts/geist-sans/Geist-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+        }
+
+        :root {
+            --bg-app: #000000;       /* black */
+            --bg-panel: #000000;     /* black */
+            --border-subtle: #27272a;/* zinc-800 */
+            --text-main: #f4f4f5;    /* zinc-100 */
+            --text-muted: #a1a1aa;   /* zinc-400 */
+            --accent: #ffffff;
+            --font-main: 'Geist Mono', 'JetBrains Mono', monospace;
+            --font-display: 'Geist Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-app);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Minimal Scrollbar */
+        aside::-webkit-scrollbar { width: 4px; }
+        aside::-webkit-scrollbar-track { background: transparent; }
+        aside::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 2px; }
+
+        /* Custom Select */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg fill='white' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/><path d='M0 0h24v24H0z' fill='none'/></svg>");
+            background-repeat: no-repeat;
+            background-position-x: 98%;
+            background-position-y: 50%;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            border: 1px solid #d4d4d8;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #3f3f46;
+            border-radius: 2px;
+        }
+
+        /* Canvas Background */
+        .canvas-container {
+            background-color: #000000;
+            background-image: 
+                radial-gradient(#27272a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Utilities */
+        .btn-toggle {
+            transition: all 0.2s ease;
+            font-family: var(--font-main);
+        }
+        .btn-toggle.active {
+            background-color: white;
+            color: black;
+            font-weight: 600;
+        }
+        .btn-toggle:not(.active):hover {
+            background-color: #27272a;
+            color: white;
+        }
+        
+        .btn-icon-toggle {
+            transition: all 0.2s ease;
+        }
+        .btn-icon-toggle.active {
+            background-color: #27272a;
+            color: white;
+        }
+        .btn-icon-toggle:not(.active) {
+            color: #71717a;
+        }
+        .btn-icon-toggle:not(.active):hover {
+            color: #a1a1aa;
+        }
+        
+        /* Palette Swatch */
+        .swatch {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #3f3f46;
+            transition: all 0.1s;
+        }
+        .swatch:hover { transform: scale(1.1); border-color: #a1a1aa; z-index: 5; }
+        .swatch.active {
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 6px rgba(255,255,255,0.4);
+            transform: scale(1.15);
+            z-index: 10;
+        }
+
+        /* Active Grad Stop Highlight */
+        .grad-stop-active label {
+            color: white !important;
+            font-weight: 600;
+        }
+        .grad-stop-active input[type=text] {
+            border-color: #ffffff !important;
+        }
+
+        /* Icon Animation */
+        .icon-spin {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .icon-spin:hover {
+            transform: rotate(180deg) scale(1.1);
+        }
+
+        /* Loader */
+        .loading-spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid #fff;
+            width: 20px;
+            height: 20px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Export Modal */
+        #exportModal {
+            transition: opacity 0.2s ease-in-out;
+        }
+        #exportModal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #exportModal:not(.hidden) {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    </style>
+</head>
+<body class="flex flex-col md:flex-row h-screen selection:bg-white selection:text-black">
+
+    <!-- Hidden Elements -->
+    <video id="hiddenVideo" loop muted playsinline class="hidden"></video>
+    <video id="bgHiddenVideo" loop muted playsinline class="hidden"></video>
+    <input type="file" id="bgImageInput" accept="image/*,video/*" class="hidden">
+    
+    <!-- Sidebar -->
+    <aside class="w-full md:w-80 bg-[var(--bg-panel)] border-r border-[var(--border-subtle)] flex flex-col z-20 shadow-2xl overflow-y-auto">
+        
+        <!-- Header -->
+        <div class="p-6 border-b border-[var(--border-subtle)] flex items-center gap-3">
+            <svg class="w-6 h-6 text-white flex-shrink-0 icon-spin cursor-pointer" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="4" cy="4" r="2" />
+                <circle cx="12" cy="4" r="1.5" opacity="0.8" />
+                <circle cx="20" cy="4" r="1" opacity="0.6" />
+                <circle cx="4" cy="12" r="1.5" opacity="0.8" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="20" cy="12" r="1.5" opacity="0.8" />
+                <circle cx="4" cy="20" r="1" opacity="0.6" />
+                <circle cx="12" cy="20" r="1.5" opacity="0.8" />
+                <circle cx="20" cy="20" r="2" />
+            </svg>
+            <span class="text-[17px] font-semibold tracking-tight text-white leading-none" style="font-family: var(--font-display);">Finoverse Tonemaker</span>
+        </div>
+
+        <div class="p-6 space-y-7 flex-1">
+            
+            <!-- Upload -->
+            <div>
+                <label class="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Source</label>
+                <div class="flex gap-2 relative group">
+                    <input type="file" id="fileInput" accept="image/*,video/*" class="hidden">
+                    <button onclick="document.getElementById('fileInput').click()" 
+                        class="flex-1 h-16 border border-dashed border-zinc-700 hover:border-zinc-500 rounded-none flex flex-col items-center justify-center transition bg-zinc-900/50 hover:bg-zinc-900 group-hover:bg-zinc-800 px-2 text-center">
+                        <span id="fileInfoText" class="text-[10px] text-zinc-500 font-mono group-hover:text-zinc-300 break-all leading-tight">JPG, PNG, or MP4</span>
+                    </button>
+                    <button id="removeSourceBtn" class="w-10 flex items-center justify-center border border-zinc-700 hover:border-red-500 text-zinc-400 hover:text-red-500 transition" title="Remove Source">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
+                <!-- Video Controls -->
+                <div id="videoControls" class="hidden mt-2 flex items-center justify-between bg-zinc-900 p-2 border border-zinc-800 rounded">
+                    <button id="playPauseBtn" class="text-white hover:text-zinc-300 p-1 flex items-center gap-2">
+                        <div class="relative w-4 h-4">
+                            <svg id="iconPause" class="w-4 h-4 absolute inset-0" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                            <svg id="iconPlay" class="w-4 h-4 absolute inset-0 hidden" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider">Play/Pause</span>
+                    </button>
+                    <span id="videoTimeDisplay" class="text-[10px] text-zinc-400 font-mono tabular-nums">00:00 / 00:00</span>
+                </div>
+            </div>
+
+            <!-- Mode -->
+            <div>
+                <label class="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest mb-2 block">Pattern</label>
+                <div class="grid grid-cols-2 gap-px bg-zinc-800 p-px border border-zinc-800">
+                    <button class="btn-toggle active py-2 text-[10px] uppercase tracking-wide" data-effect="dot">Dots</button>
+                    <button class="btn-toggle py-2 text-[10px] uppercase tracking-wide" data-effect="twelve">Stippling</button>
+                    <button class="btn-toggle py-2 text-[10px] uppercase tracking-wide" data-effect="pixel">8bit</button>
+                    <button class="btn-toggle py-2 text-[10px] uppercase tracking-wide font-bold" data-effect="line">Lines</button>
+                </div>
+            </div>
+
+            <!-- Parameters -->
+            <div class="space-y-5">
+                
+                <!-- Canvas Size -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Canvas Size</label>
+                    </div>
+                    <select id="canvasSize" class="w-full bg-zinc-900 border border-zinc-700 text-xs text-white px-2 py-2.5 font-mono outline-none focus:border-white transition">
+                        <option value="1080x1080" selected>1:1 (1080x1080px)</option>
+                        <option value="1080x1350">3:4 (1080x1350px)</option>
+                        <option value="1080x1920">9:16 (1080x1920px)</option>
+                        <option value="1920x1080">16:9 (1920x1080px)</option>
+                    </select>
+                </div>
+
+                <!-- Grid -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Grid Scale</label>
+                        <span id="resolutionValue" class="text-[10px] font-mono text-white">40px</span>
+                    </div>
+                    <input type="range" id="resolution" min="5" max="100" value="40" step="1">
+                </div>
+                
+                <!-- Y-Spacing -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Y-Spacing</label>
+                        <span id="spacingYValue" class="text-[10px] font-mono text-white">1.0x</span>
+                    </div>
+                    <input type="range" id="spacingY" min="0.5" max="3.0" value="1.0" step="0.1">
+                </div>
+                
+                <!-- Angle -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Angle</label>
+                        <span id="angleValue" class="text-[10px] font-mono text-white">0°</span>
+                    </div>
+                    <input type="range" id="angle" min="-90" max="90" value="0" step="1">
+                </div>
+
+                <!-- Intensity / Threshold -->
+                <div id="contrastGroup" class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Threshold / Gamma</label>
+                        <span id="intensityValue" class="text-[10px] font-mono text-white">1.0</span>
+                    </div>
+                    <input type="range" id="intensity" min="0.1" max="3" value="1" step="0.1">
+                </div>
+                
+                <!-- Scale -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Scale</label>
+                        <span id="scaleValue" class="text-[10px] font-mono text-white">1.0x</span>
+                    </div>
+                    <input type="range" id="scale" min="0.1" max="3.0" value="1.0" step="0.05">
+                </div>
+
+                <!-- Dithering -->
+                <div class="group">
+                    <div class="flex justify-between mb-1">
+                        <label class="text-[10px] uppercase text-zinc-400">Dithering</label>
+                        <span id="ditherValue" class="text-[10px] font-mono text-white">0%</span>
+                    </div>
+                    <input type="range" id="dither" min="0" max="1" value="0" step="0.05">
+                </div>
+            </div>
+
+            <!-- Background & Appearance -->
+            <div>
+                
+                <!-- BACKGROUND SECTION -->
+                <div class="mb-5">
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest block">Background</label>
+                        <!-- BG Mode Switcher -->
+                        <div class="flex bg-zinc-900 rounded p-0.5 border border-zinc-800">
+                            <button class="btn-icon-toggle active w-6 h-6 flex items-center justify-center rounded" data-mode="color" title="Solid Color">
+                                <div class="w-3 h-3 bg-current rounded-sm"></div>
+                            </button>
+                            <button class="btn-icon-toggle w-6 h-6 flex items-center justify-center rounded" data-mode="gradient" title="Gradient">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><defs><linearGradient id="iconGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="currentColor" stop-opacity="0.3"/><stop offset="100%" stop-color="currentColor"/></linearGradient></defs><rect width="18" height="18" x="3" y="3" rx="2" ry="2" fill="url(#iconGrad)"/></svg>
+                            </button>
+                            <button class="btn-icon-toggle w-6 h-6 flex items-center justify-center rounded" data-mode="image" title="Image/Video">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                            </button>
+                            <button class="btn-icon-toggle w-6 h-6 flex items-center justify-center rounded" data-mode="transparent" title="Transparent">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><circle cx="12" cy="12" r="10"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Color -->
+                    <div id="bgControlColor" class="space-y-3">
+                        <div class="flex gap-2">
+                            <div class="h-8 w-8 border border-zinc-700 bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-zinc-500 relative flex-shrink-0">
+                                <input type="color" id="bgColor" value="#ffffff" class="opacity-0 absolute inset-0 cursor-pointer w-full h-full">
+                                <div id="bgColorPreview" class="w-full h-full" style="background-color: #ffffff;"></div>
+                            </div>
+                            <input type="text" id="bgColorInput" value="#FFFFFF" class="flex-1 bg-zinc-900 border border-zinc-700 text-xs px-2 font-mono text-zinc-300 focus:outline-none focus:border-white uppercase" maxlength="7">
+                        </div>
+                        <div class="grid grid-cols-12 gap-1" id="bgPresetPalette">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Mode: Gradient -->
+                    <div id="bgControlGradient" class="hidden space-y-3">
+                         <div class="flex items-end gap-2">
+                            <!-- Start Color -->
+                            <div class="flex-1 group cursor-pointer" id="gradStartGroup">
+                                <label class="text-[9px] uppercase text-zinc-500 mb-1 block group-[.grad-stop-active]:text-white">Start</label>
+                                <div class="flex gap-1">
+                                     <div class="h-6 w-6 border border-zinc-700 bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-zinc-500 relative flex-shrink-0">
+                                        <input type="color" id="gradStart" value="#000000" class="opacity-0 absolute inset-0 cursor-pointer w-full h-full">
+                                        <div id="gradStartPreview" class="w-full h-full" style="background-color: #000000;"></div>
+                                    </div>
+                                    <input type="text" id="gradStartInput" value="#000000" class="w-full min-w-0 bg-zinc-900 border border-zinc-700 text-[10px] px-1 font-mono text-zinc-300 uppercase focus:outline-none focus:border-white">
+                                </div>
+                            </div>
+
+                            <!-- Swap Button -->
+                            <button id="gradSwapBtn" class="mb-0.5 h-6 w-6 flex items-center justify-center text-zinc-500 hover:text-white transition flex-shrink-0" title="Swap Colors">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                            </button>
+
+                             <!-- End Color -->
+                             <div class="flex-1 group cursor-pointer" id="gradEndGroup">
+                                <label class="text-[9px] uppercase text-zinc-500 mb-1 block group-[.grad-stop-active]:text-white">End</label>
+                                <div class="flex gap-1">
+                                     <div class="h-6 w-6 border border-zinc-700 bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-zinc-500 relative flex-shrink-0">
+                                        <input type="color" id="gradEnd" value="#ffffff" class="opacity-0 absolute inset-0 cursor-pointer w-full h-full">
+                                        <div id="gradEndPreview" class="w-full h-full" style="background-color: #ffffff;"></div>
+                                    </div>
+                                    <input type="text" id="gradEndInput" value="#FFFFFF" class="w-full min-w-0 bg-zinc-900 border border-zinc-700 text-[10px] px-1 font-mono text-zinc-300 uppercase focus:outline-none focus:border-white">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gradient Presets -->
+                        <div class="grid grid-cols-12 gap-1" id="gradPresetPalette">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-[9px] uppercase text-zinc-500 mb-1 block">Type</label>
+                                <select id="gradType" class="w-full bg-zinc-900 border border-zinc-700 text-[10px] text-white px-1 py-1 font-mono outline-none">
+                                    <option value="linear">Linear</option>
+                                    <option value="radial">Radial</option>
+                                </select>
+                            </div>
+                             <div>
+                                <div class="flex justify-between mb-1">
+                                    <label id="gradParamLabel" class="text-[9px] uppercase text-zinc-500 block">Angle</label>
+                                    <span id="gradParamValue" class="text-[9px] font-mono text-zinc-400">45°</span>
+                                </div>
+                                <input type="range" id="gradAngle" min="0" max="360" value="45" step="1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Image -->
+                    <div id="bgControlImage" class="hidden space-y-3">
+                        <div class="flex gap-2">
+                            <button onclick="document.getElementById('bgImageInput').click()" class="flex-1 py-2 border border-zinc-700 hover:border-white text-zinc-400 hover:text-white text-[10px] uppercase font-bold tracking-wide transition flex items-center justify-center gap-2">
+                                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                                <span id="bgImageName">Upload Media</span>
+                            </button>
+                            <button id="removeBgBtn" class="w-10 flex items-center justify-center border border-zinc-700 hover:border-red-500 text-zinc-400 hover:text-red-500 transition" title="Remove Background">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            </button>
+                        </div>
+                        
+                        <!-- BG Image Settings -->
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[9px] uppercase text-zinc-500 block">Blur</label>
+                                    <span id="bgBlurValue" class="text-[9px] font-mono text-zinc-400">0px</span>
+                                </div>
+                                <input type="range" id="bgBlur" min="0" max="100" value="0" step="1">
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[9px] uppercase text-zinc-500 block">Scale</label>
+                                    <span id="bgScaleValue" class="text-[9px] font-mono text-zinc-400">1.0x</span>
+                                </div>
+                                <input type="range" id="bgScale" min="1.0" max="5.0" value="1.0" step="0.05">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode: Transparent -->
+                    <div id="bgControlTransparent" class="hidden">
+                        <div class="p-2 border border-dashed border-zinc-800 text-center">
+                            <span class="text-[10px] text-zinc-500 uppercase">Background is Transparent</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- FOREGROUND SECTION -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-[10px] font-semibold text-[var(--text-muted)] uppercase tracking-widest block">Foreground</label>
+                    </div>
+                    <div class="flex gap-2 mb-3">
+                        <div class="h-8 w-8 border border-zinc-700 bg-zinc-900 flex items-center justify-center cursor-pointer hover:border-zinc-500 relative flex-shrink-0">
+                            <input type="color" id="fgColor" value="#111111" class="opacity-0 absolute inset-0 cursor-pointer w-full h-full">
+                            <div id="fgColorPreview" class="w-full h-full" style="background-color: #111111;"></div>
+                        </div>
+                        <input type="text" id="fgColorInput" value="#111111" class="flex-1 bg-zinc-900 border border-zinc-700 text-xs px-2 font-mono text-zinc-300 focus:outline-none focus:border-white uppercase" maxlength="7">
+                    </div>
+                    <!-- FG Presets Grid -->
+                    <div class="grid grid-cols-12 gap-1" id="fgPresetPalette">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <div class="mt-5 flex items-center justify-between border-t border-zinc-800 pt-4">
+                    <label for="invert" class="text-[10px] uppercase text-zinc-300 cursor-pointer select-none tracking-wide">Invert Rendering</label>
+                    <div class="relative inline-block w-8 h-4 align-middle select-none transition duration-200 ease-in">
+                        <input type="checkbox" name="toggle" id="invert" class="toggle-checkbox absolute block w-4 h-4 rounded-full bg-white border-4 appearance-none cursor-pointer border-zinc-600 checked:right-0 checked:border-white right-4"/>
+                        <label for="invert" class="toggle-label block overflow-hidden h-4 rounded-full bg-zinc-700 cursor-pointer"></label>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-panel)] space-y-3">
+            <button id="exportSvgBtn" class="w-full py-3 bg-white hover:bg-zinc-200 text-black font-bold uppercase tracking-wide rounded-none text-xs transition shadow-lg flex items-center justify-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <span>SVG</span>
+            </button>
+            <div class="grid grid-cols-2 gap-2">
+                <button id="downloadBtn" class="w-full py-3 bg-transparent border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold uppercase tracking-wide rounded-none text-xs transition flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>PNG</span>
+                </button>
+                <button id="renderVideoBtn" class="w-full py-3 bg-transparent border border-zinc-700 hover:border-zinc-500 text-zinc-400 hover:text-white font-bold uppercase tracking-wide rounded-none text-xs transition flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <div id="renderText" class="flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>MP4</span>
+                    </div>
+                    <div id="renderSpinner" class="loading-spinner hidden"></div>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Canvas Area -->
+    <main class="flex-1 relative overflow-hidden flex items-center justify-center canvas-container" id="dropZone">
+        <div id="dragOverlay" class="absolute inset-0 bg-zinc-900/80 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+            <div class="border-2 border-dashed border-white/20 p-12 text-center">
+                <p class="text-xl font-bold text-white uppercase tracking-widest font-mono">Import Media</p>
+            </div>
+        </div>
+        
+        <canvas id="canvas" class="shadow-2xl max-w-[90%] max-h-[90%] object-contain"></canvas>
+    </main>
+
+    <!-- Export Options Modal -->
+    <div id="exportModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+        <div class="bg-zinc-900 border border-zinc-700 p-6 rounded-none shadow-2xl w-80">
+            <h3 class="text-white font-bold uppercase tracking-wider mb-4 text-center">Export Settings</h3>
+            
+            <div class="flex items-center justify-between mb-6">
+                <span class="text-zinc-300 text-xs font-mono">Transparent BG</span>
+                <div class="relative inline-block w-10 h-5 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="toggle" id="transparentExport" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-zinc-600 checked:right-0 checked:border-white right-5"/>
+                    <label for="transparentExport" class="toggle-label block overflow-hidden h-5 rounded-full bg-zinc-700 cursor-pointer"></label>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="cancelExport" class="flex-1 py-2 border border-zinc-600 text-zinc-400 hover:text-white hover:border-zinc-400 text-xs font-bold uppercase transition">Cancel</button>
+                <button id="confirmExport" class="flex-1 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold uppercase transition">Download</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State & Config ---
+        const state = {
+            mediaType: 'image',
+            source: null,
+            isVideoPlaying: false,
+            bgWasLoadedOnce: false, // Prevents auto-reload after manual deletion
+            
+            canvasWidth: 1080,
+            canvasHeight: 1080,
+            
+            effect: 'dot',
+            scale: 1.0,
+            resolution: 40,
+            spacingY: 1.0,
+            angle: 0,
+            intensity: 1.0,
+            dither: 0,
+            
+            bgMode: 'color', 
+            bgMediaType: 'image',
+            bgColor: '#ffffff', 
+            bgGradientType: 'linear',
+            bgGradientStart: '#000000',
+            bgGradientEnd: '#ffffff',
+            bgGradientAngle: 45,
+            bgGradientScale: 1.0,
+            activeGradientStop: 'start',
+            bgSource: null,
+            bgBlur: 0,
+            bgScale: 1.0,
+            
+            fgColor: '#111111', 
+            invert: false,
+            animationId: null
+        };
+
+        const presetColors = [
+            '#FFFFFF', '#F0F0F0', '#868C9B', '#474C57', '#111111', 
+            '#F93549', '#690D17', '#FF9300', '#9E28B5', '#042744', 
+            '#66C7FF', '#8AEDE2'
+        ];
+
+        const ui = {
+            canvas: document.getElementById('canvas'),
+            hiddenVideo: document.getElementById('hiddenVideo'),
+            bgHiddenVideo: document.getElementById('bgHiddenVideo'),
+            fileInput: document.getElementById('fileInput'),
+            fileInfoText: document.getElementById('fileInfoText'),
+            videoControls: document.getElementById('videoControls'),
+            playPauseBtn: document.getElementById('playPauseBtn'),
+            videoTimeDisplay: document.getElementById('videoTimeDisplay'),
+            iconPlay: document.getElementById('iconPlay'),
+            iconPause: document.getElementById('iconPause'),
+            
+            canvasSize: document.getElementById('canvasSize'),
+            resolution: document.getElementById('resolution'),
+            resolutionVal: document.getElementById('resolutionValue'),
+            spacingY: document.getElementById('spacingY'),
+            spacingYVal: document.getElementById('spacingYValue'),
+            intensity: document.getElementById('intensity'),
+            intensityVal: document.getElementById('intensityValue'),
+            scale: document.getElementById('scale'),
+            scaleVal: document.getElementById('scaleValue'),
+            angle: document.getElementById('angle'),
+            angleVal: document.getElementById('angleValue'),
+            dither: document.getElementById('dither'),
+            ditherVal: document.getElementById('ditherValue'),
+            
+            bgModeBtns: document.querySelectorAll('.btn-icon-toggle'),
+            bgControlColor: document.getElementById('bgControlColor'),
+            bgControlGradient: document.getElementById('bgControlGradient'),
+            bgControlImage: document.getElementById('bgControlImage'),
+            bgControlTransparent: document.getElementById('bgControlTransparent'),
+            
+            bgColor: document.getElementById('bgColor'),
+            bgColorInput: document.getElementById('bgColorInput'),
+            bgColorPreview: document.getElementById('bgColorPreview'),
+            bgPresetPalette: document.getElementById('bgPresetPalette'),
+            
+            gradType: document.getElementById('gradType'),
+            gradAngle: document.getElementById('gradAngle'),
+            gradParamLabel: document.getElementById('gradParamLabel'),
+            gradParamValue: document.getElementById('gradParamValue'),
+            gradStartGroup: document.getElementById('gradStartGroup'),
+            gradStart: document.getElementById('gradStart'),
+            gradStartInput: document.getElementById('gradStartInput'),
+            gradStartPreview: document.getElementById('gradStartPreview'),
+            gradEndGroup: document.getElementById('gradEndGroup'),
+            gradEnd: document.getElementById('gradEnd'),
+            gradEndInput: document.getElementById('gradEndInput'),
+            gradEndPreview: document.getElementById('gradEndPreview'),
+            gradSwapBtn: document.getElementById('gradSwapBtn'),
+            gradPresetPalette: document.getElementById('gradPresetPalette'),
+
+            bgImageInput: document.getElementById('bgImageInput'),
+            bgImageName: document.getElementById('bgImageName'),
+            bgBlur: document.getElementById('bgBlur'),
+            bgBlurVal: document.getElementById('bgBlurValue'),
+            bgScale: document.getElementById('bgScale'),
+            bgScaleVal: document.getElementById('bgScaleValue'),
+            removeBgBtn: document.getElementById('removeBgBtn'),
+            removeSourceBtn: document.getElementById('removeSourceBtn'),
+            
+            fgColor: document.getElementById('fgColor'),
+            fgColorInput: document.getElementById('fgColorInput'),
+            fgColorPreview: document.getElementById('fgColorPreview'),
+            fgPresetPalette: document.getElementById('fgPresetPalette'),
+            
+            invert: document.getElementById('invert'),
+            
+            effectBtns: document.querySelectorAll('.btn-toggle'),
+            dropZone: document.getElementById('dropZone'),
+            dragOverlay: document.getElementById('dragOverlay'),
+            
+            downloadBtn: document.getElementById('downloadBtn'),
+            exportSvgBtn: document.getElementById('exportSvgBtn'),
+            renderVideoBtn: document.getElementById('renderVideoBtn'),
+            renderText: document.getElementById('renderText'),
+            renderSpinner: document.getElementById('renderSpinner'),
+
+            exportModal: document.getElementById('exportModal'),
+            transparentExport: document.getElementById('transparentExport'),
+            cancelExport: document.getElementById('cancelExport'),
+            confirmExport: document.getElementById('confirmExport')
+        };
+
+        const ctx = ui.canvas.getContext('2d', { willReadFrequently: true });
+
+        // --- Core Logic ---
+
+        function init() {
+            createPlaceholder(true);
+            setupPresets();
+            setupEvents();
+            setupVideoHandling();
+            ui.renderVideoBtn.disabled = false;
+            setActiveGradStop('start');
+            updateGradUI();
+        }
+
+        function setupPresets() {
+            const create = (container, type) => {
+                container.innerHTML = '';
+                presetColors.forEach(color => {
+                    const el = document.createElement('div');
+                    el.className = 'swatch';
+                    el.style.backgroundColor = color;
+                    el.dataset.color = color;
+                    el.onclick = () => {
+                        if (type === 'bg') updateColorState('bgColor', color, ui.bgColorPreview, ui.bgColorInput);
+                        else if (type === 'fg') updateColorState('fgColor', color, ui.fgColorPreview, ui.fgColorInput);
+                        else if (type === 'grad') {
+                             if (state.activeGradientStop === 'start') {
+                                 updateColorState('bgGradientStart', color, ui.gradStartPreview, ui.gradStartInput);
+                             } else {
+                                 updateColorState('bgGradientEnd', color, ui.gradEndPreview, ui.gradEndInput);
+                             }
+                        }
+                    };
+                    container.appendChild(el);
+                });
+            };
+
+            create(ui.bgPresetPalette, 'bg');
+            create(ui.fgPresetPalette, 'fg');
+            create(ui.gradPresetPalette, 'grad');
+            
+            updatePresetHighlights();
+        }
+
+        function updatePresetHighlights() {
+            const highlight = (container, currentColor) => {
+                Array.from(container.children).forEach(el => {
+                    if (el.dataset.color.toLowerCase() === currentColor.toLowerCase()) el.classList.add('active');
+                    else el.classList.remove('active');
+                });
+            };
+
+            highlight(ui.bgPresetPalette, state.bgColor);
+            highlight(ui.fgPresetPalette, state.fgColor);
+            
+            const activeGradColor = state.activeGradientStop === 'start' ? state.bgGradientStart : state.bgGradientEnd;
+            highlight(ui.gradPresetPalette, activeGradColor);
+        }
+
+        function updateColorState(key, val, previewEl, textInput) {
+            state[key] = val;
+            previewEl.style.backgroundColor = val;
+            textInput.value = val;
+            
+            if (/^#[0-9A-F]{6}$/i.test(val)) {
+                if (key === 'bgColor') ui.bgColor.value = val;
+                if (key === 'fgColor') ui.fgColor.value = val;
+                if (key === 'bgGradientStart') ui.gradStart.value = val;
+                if (key === 'bgGradientEnd') ui.gradEnd.value = val;
+            }
+
+            updatePresetHighlights();
+            // Trigger render if video is not playing (static mode)
+            if (!state.isVideoPlaying) renderFrame();
+        }
+
+        function setActiveGradStop(stop) {
+            state.activeGradientStop = stop;
+            if (stop === 'start') {
+                ui.gradStartGroup.classList.add('grad-stop-active');
+                ui.gradEndGroup.classList.remove('grad-stop-active');
+            } else {
+                ui.gradStartGroup.classList.remove('grad-stop-active');
+                ui.gradEndGroup.classList.add('grad-stop-active');
+            }
+            updatePresetHighlights();
+        }
+        
+        function updateGradUI() {
+            const type = ui.gradType.value;
+            if (type === 'linear') {
+                ui.gradParamLabel.innerText = 'Angle';
+                ui.gradAngle.min = 0;
+                ui.gradAngle.max = 360;
+                ui.gradAngle.step = 1;
+                ui.gradAngle.value = state.bgGradientAngle;
+                ui.gradParamValue.innerText = state.bgGradientAngle + '°';
+            } else {
+                ui.gradParamLabel.innerText = 'Scale';
+                ui.gradAngle.min = 0.1;
+                ui.gradAngle.max = 3.0; 
+                ui.gradAngle.step = 0.1;
+                ui.gradAngle.value = state.bgGradientScale;
+                ui.gradParamValue.innerText = state.bgGradientScale.toFixed(1) + 'x';
+            }
+        }
+
+        window.setFg = (color) => {
+            updateColorState('fgColor', color, ui.fgColorPreview, ui.fgColorInput);
+        };
+
+        function setBgMode(mode) {
+            state.bgMode = mode;
+            
+            ui.bgModeBtns.forEach(btn => {
+                if(btn.dataset.mode === mode) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+
+            ui.bgControlColor.classList.add('hidden');
+            ui.bgControlGradient.classList.add('hidden');
+            ui.bgControlImage.classList.add('hidden');
+            ui.bgControlTransparent.classList.add('hidden');
+
+            if (mode === 'color') ui.bgControlColor.classList.remove('hidden');
+            else if (mode === 'gradient') ui.bgControlGradient.classList.remove('hidden');
+            else if (mode === 'image') ui.bgControlImage.classList.remove('hidden');
+            else if (mode === 'transparent') ui.bgControlTransparent.classList.remove('hidden');
+
+            if (mode === 'image' && state.bgMediaType === 'video' && state.bgSource) {
+                state.bgSource.play().catch(e=>console.log(e));
+                state.isVideoPlaying = true;
+                ui.renderVideoBtn.disabled = false;
+                startVideoLoop();
+            } else if (mode === 'image' && !state.bgSource && !state.bgWasLoadedOnce) {
+                // Auto load initial default only ONCE (prevents annoying re-loads after manual removal)
+                const bgUrl = "https://res.cloudinary.com/djobmtpz2/video/upload/v1771223236/social_Line_A_cinematic_shot_of_a_girls_upper_body_from_behind_runni_edf9751a-01ce-4ff1-9ea0-f165896d8880_0_yjhqff.mp4";
+                 
+                 state.bgMediaType = 'video';
+                 ui.bgHiddenVideo.crossOrigin = "anonymous";
+                 ui.bgHiddenVideo.src = bgUrl;
+                 ui.bgHiddenVideo.volume = 0;
+                 ui.bgHiddenVideo.muted = true;
+                 ui.bgHiddenVideo.loop = true;
+                 
+                 ui.bgHiddenVideo.play().then(() => {
+                     state.bgSource = ui.bgHiddenVideo;
+                     state.bgWasLoadedOnce = true;
+                     ui.bgImageName.innerText = "Default BG Video";
+                     ui.renderVideoBtn.disabled = false;
+                     state.isVideoPlaying = true;
+                     if(state.mediaType === 'video' || state.bgMediaType === 'video') {
+                         ui.videoControls.classList.remove('hidden');
+                     }
+                     updateVideoIcons();
+                     startVideoLoop();
+                     renderFrame();
+                 }).catch(e => console.warn("BG play blocked", e));
+            }
+
+            renderFrame();
+        }
+
+        function handleBgFile(file) {
+            if(!file) return;
+            const url = URL.createObjectURL(file);
+            ui.bgImageName.innerText = file.name.substring(0, 15) + '...';
+
+            if (file.type.startsWith('video/')) {
+                state.bgMediaType = 'video';
+                ui.bgHiddenVideo.src = url;
+                ui.bgHiddenVideo.volume = 0;
+                ui.bgHiddenVideo.muted = true;
+                ui.bgHiddenVideo.loop = true;
+                ui.bgHiddenVideo.play().then(() => {
+                     state.bgSource = ui.bgHiddenVideo;
+                     state.bgWasLoadedOnce = true; // Mark that user loaded something
+                     ui.renderVideoBtn.disabled = false;
+                     state.isVideoPlaying = true;
+                     ui.videoControls.classList.remove('hidden');
+                     updateVideoIcons();
+                     startVideoLoop();
+                     if(state.bgMode !== 'image') setBgMode('image');
+                     else renderFrame();
+                }).catch(e => console.warn("BG play prevented", e));
+            } else {
+                state.bgMediaType = 'image';
+                const img = new Image();
+                img.onload = () => {
+                    state.bgSource = img;
+                    state.bgWasLoadedOnce = true;
+                    if(state.bgMode === 'image') renderFrame();
+                }
+                img.src = url;
+                if(state.bgMode !== 'image') setBgMode('image');
+            }
+        }
+
+        function createPlaceholder(resetSettings = false) {
+            const sourceUrl = "https://res.cloudinary.com/djobmtpz2/video/upload/v1771223236/social_u9561389665_a_blurred_image_of_a_flower_in_movement_--ar_5877_78a03dba-4ec7-4eb5-ad1d-501724a75c05_0_fuzkzq.mp4";
+            const bgUrl = "https://res.cloudinary.com/djobmtpz2/video/upload/v1771223236/social_Line_A_cinematic_shot_of_a_girls_upper_body_from_behind_runni_edf9751a-01ce-4ff1-9ea0-f165896d8880_0_yjhqff.mp4";
+
+            ui.hiddenVideo.crossOrigin = "anonymous";
+            ui.hiddenVideo.src = sourceUrl;
+            ui.hiddenVideo.volume = 0;
+            ui.hiddenVideo.muted = true;
+            ui.hiddenVideo.loop = true;
+            ui.hiddenVideo.setAttribute('playsinline', '');
+            
+            ui.bgHiddenVideo.crossOrigin = "anonymous";
+            ui.bgHiddenVideo.src = bgUrl;
+            ui.bgHiddenVideo.volume = 0;
+            ui.bgHiddenVideo.muted = true;
+            ui.bgHiddenVideo.loop = true;
+            ui.bgHiddenVideo.setAttribute('playsinline', '');
+
+            const initApp = () => {
+                state.mediaType = 'video';
+                state.source = ui.hiddenVideo;
+                state.bgMediaType = 'video';
+                state.bgSource = ui.bgHiddenVideo;
+                
+                if (resetSettings) {
+                    state.bgMode = 'image';
+                    state.bgWasLoadedOnce = true;
+                    state.bgColor = "#ffffff";
+                    ui.bgColor.value = "#ffffff";
+                    ui.bgColorInput.value = "#ffffff";
+                    ui.bgColorPreview.style.backgroundColor = "#ffffff";
+                    state.fgColor = "#111111";
+                    ui.fgColor.value = "#111111";
+                    ui.fgColorInput.value = "#111111";
+                    ui.fgColorPreview.style.backgroundColor = "#111111";
+                    state.resolution = 40; 
+                    ui.resolution.value = 40;
+                    ui.resolutionVal.innerText = "40px";
+                    state.spacingY = 1.0;
+                    ui.spacingY.value = 1.0;
+                    ui.spacingYVal.innerText = "1.0x";
+                    state.canvasWidth = 1080;
+                    state.canvasHeight = 1080;
+                    ui.canvasSize.value = "1080x1080";
+                    
+                    updatePresetHighlights();
+                    ui.bgModeBtns.forEach(btn => {
+                        if(btn.dataset.mode === 'image') btn.classList.add('active');
+                        else btn.classList.remove('active');
+                    });
+                    ui.bgControlColor.classList.add('hidden');
+                    ui.bgControlImage.classList.remove('hidden');
+                }
+
+                state.isVideoPlaying = !ui.hiddenVideo.paused; 
+                ui.videoControls.classList.remove('hidden');
+                ui.bgImageName.innerText = "Default BG Video";
+                ui.fileInfoText.innerText = "Default Video";
+                ui.renderVideoBtn.disabled = false;
+
+                updateVideoIcons();
+                if (state.isVideoPlaying) {
+                    startVideoLoop();
+                } else {
+                    setTimeout(() => renderFrame(), 100);
+                }
+            };
+
+            const p1 = ui.hiddenVideo.play().catch(e => console.warn("Main Autoplay prevented", e));
+            const p2 = ui.bgHiddenVideo.play().catch(e => console.warn("BG Autoplay prevented", e));
+            Promise.allSettled([p1, p2]).then(initApp);
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function handleFile(file) {
+            if (!file) return;
+            if (state.mediaType === 'video' && state.source) {
+                state.source.pause();
+                state.source.src = "";
+                cancelAnimationFrame(state.animationId);
+            }
+            const url = URL.createObjectURL(file);
+            if (file.type.startsWith('video/')) {
+                state.mediaType = 'video';
+                ui.videoControls.classList.remove('hidden');
+                ui.renderVideoBtn.disabled = false;
+                ui.hiddenVideo.src = url;
+                ui.hiddenVideo.volume = 0;
+                ui.hiddenVideo.muted = true;
+                state.source = ui.hiddenVideo;
+                ui.hiddenVideo.onloadedmetadata = () => {
+                     ui.videoTimeDisplay.innerText = `00:00 / ${formatTime(ui.hiddenVideo.duration)}`;
+                };
+                ui.hiddenVideo.onloadeddata = () => {
+                    ui.hiddenVideo.play();
+                    state.isVideoPlaying = true;
+                    updateVideoIcons();
+                    startVideoLoop();
+                    if(ui.fileInfoText) ui.fileInfoText.innerText = `${file.name} | ${ui.hiddenVideo.videoWidth}x${ui.hiddenVideo.videoHeight}px`;
+                };
+            } else {
+                state.mediaType = 'image';
+                if (state.bgMode !== 'image' || state.bgMediaType !== 'video') ui.videoControls.classList.add('hidden');
+                ui.renderVideoBtn.disabled = false;
+                cancelAnimationFrame(state.animationId);
+                if (state.bgMode === 'image' && state.bgMediaType === 'video') {
+                    state.isVideoPlaying = true;
+                    startVideoLoop();
+                }
+                const img = new Image();
+                img.onload = () => {
+                    state.source = img;
+                    renderFrame();
+                    if(ui.fileInfoText) ui.fileInfoText.innerText = `${file.name} | ${img.width}x${img.height}px`;
+                };
+                img.src = url;
+            }
+        }
+
+        function startVideoLoop() {
+            function loop() {
+                if (state.mediaType === 'video' && state.source && !state.source.paused) {
+                    ui.videoTimeDisplay.innerText = `${formatTime(state.source.currentTime)} / ${formatTime(state.source.duration)}`;
+                }
+                const bgIsVideo = (state.bgMode === 'image' && state.bgMediaType === 'video');
+                if ((state.mediaType === 'video' || bgIsVideo) && state.isVideoPlaying) {
+                    renderFrame();
+                    state.animationId = requestAnimationFrame(loop);
+                }
+            }
+            cancelAnimationFrame(state.animationId);
+            loop();
+        }
+
+        function updateVideoIcons() {
+            if (state.isVideoPlaying) {
+                ui.iconPlay.classList.add('hidden');
+                ui.iconPause.classList.remove('hidden');
+            } else {
+                ui.iconPlay.classList.remove('hidden');
+                ui.iconPause.classList.add('hidden');
+            }
+        }
+
+        function setupVideoHandling() {
+            ui.playPauseBtn.addEventListener('click', () => {
+                state.isVideoPlaying = !state.isVideoPlaying;
+                if (state.mediaType === 'video' && state.source) {
+                    if (state.isVideoPlaying) state.source.play().catch(e=>console.log(e));
+                    else state.source.pause();
+                }
+                if (state.bgMode === 'image' && state.bgMediaType === 'video' && state.bgSource) {
+                    if (state.isVideoPlaying) state.bgSource.play().catch(e=>console.log(e));
+                    else state.bgSource.pause();
+                }
+                if (state.isVideoPlaying) startVideoLoop();
+                else cancelAnimationFrame(state.animationId);
+                updateVideoIcons();
+            });
+        }
+
+        function renderFrame() {
+            let w = state.canvasWidth;
+            let h = state.canvasHeight;
+            if (ui.canvas.width !== w || ui.canvas.height !== h) {
+                ui.canvas.width = w;
+                ui.canvas.height = h;
+            }
+
+            // Always clear filters at start of new frame
+            ctx.filter = 'none';
+
+            if (!state.source) {
+                 renderBackgroundLayer(w, h);
+                 const phCanvas = document.createElement('canvas');
+                 phCanvas.width = w; phCanvas.height = h;
+                 const pCtx = phCanvas.getContext('2d');
+                 pCtx.fillStyle = "#ffffff"; 
+                 pCtx.fillRect(0,0,w,h);
+                 pCtx.fillStyle = "#000000"; 
+                 pCtx.font = "600 400px 'Geist Sans', sans-serif";
+                 pCtx.textAlign = "center";
+                 pCtx.textBaseline = "middle";
+                 pCtx.letterSpacing = "-25px"; 
+                 pCtx.fillText("FV", w/2, h/2 + 30);
+                 const imgData = pCtx.getImageData(0,0,w,h).data;
+                 renderPatternLayer(w, h, imgData);
+                 return;
+            }
+
+            renderBackgroundLayer(w, h);
+
+            let srcW = state.mediaType === 'video' ? state.source.videoWidth : state.source.width;
+            let srcH = state.mediaType === 'video' ? state.source.videoHeight : state.source.height;
+            if (!srcW || !srcH) return;
+
+            const scaleFit = Math.max(w / srcW, h / srcH); 
+            const scaledW = srcW * scaleFit * state.scale;
+            const scaledH = srcH * scaleFit * state.scale;
+            const offX = (w - scaledW) / 2;
+            const offY = (h - scaledH) / 2;
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = w;
+            offCanvas.height = h;
+            const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+            offCtx.fillStyle = '#ffffff'; 
+            offCtx.fillRect(0, 0, w, h);
+            offCtx.drawImage(state.source, offX, offY, scaledW, scaledH);
+            const imgData = offCtx.getImageData(0, 0, w, h).data;
+            renderPatternLayer(w, h, imgData);
+        }
+
+        function renderBackgroundLayer(w, h) {
+            ctx.save();
+            if (state.bgMode === 'transparent') {
+                ctx.clearRect(0, 0, w, h);
+            } else if (state.bgMode === 'color') {
+                ctx.fillStyle = state.bgColor;
+                ctx.fillRect(0, 0, w, h);
+            } else if (state.bgMode === 'gradient') {
+                 let grad;
+                 if (state.bgGradientType === 'linear') {
+                     const angle = (state.bgGradientAngle - 90) * (Math.PI / 180);
+                     const r = Math.sqrt(w*w + h*h) / 2;
+                     const cx = w/2, cy = h/2;
+                     const x0 = cx - Math.cos(angle) * r;
+                     const y0 = cy - Math.sin(angle) * r;
+                     const x1 = cx + Math.cos(angle) * r;
+                     const y1 = cy + Math.sin(angle) * r;
+                     grad = ctx.createLinearGradient(x0, y0, x1, y1);
+                 } else {
+                     const r = Math.max(w, h) / 1.5 * state.bgGradientScale;
+                     grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, r);
+                 }
+                 grad.addColorStop(0, state.bgGradientStart);
+                 grad.addColorStop(1, state.bgGradientEnd);
+                 ctx.fillStyle = grad;
+                 ctx.fillRect(0, 0, w, h);
+            } else if (state.bgMode === 'image' && state.bgSource) {
+                let bgW = (state.bgMediaType === 'video') ? state.bgSource.videoWidth : state.bgSource.width;
+                let bgH = (state.bgMediaType === 'video') ? state.bgSource.videoHeight : state.bgSource.height;
+
+                if (bgW && bgH) {
+                    const ratio = Math.max(w / bgW, h / bgH) * state.bgScale;
+                    const finalW = bgW * ratio;
+                    const finalH = bgH * ratio;
+                    const finalX = (w - finalW) / 2;
+                    const finalY = (h - finalH) / 2;
+
+                    ctx.fillStyle = state.bgColor; 
+                    ctx.fillRect(0, 0, w, h);
+
+                    if (state.bgBlur > 0) {
+                        ctx.filter = `blur(${state.bgBlur}px)`;
+                        const pad = state.bgBlur * 3; 
+                        ctx.drawImage(state.bgSource, finalX - pad, finalY - pad, finalW + pad*2, finalH + pad*2);
+                    } else {
+                        ctx.drawImage(state.bgSource, finalX, finalY, finalW, finalH);
+                    }
+                }
+            } else {
+                // If mode is image/video but nothing loaded, fallback to bgColor
+                ctx.fillStyle = state.bgColor; 
+                ctx.fillRect(0, 0, w, h);
+            }
+            ctx.restore();
+        }
+
+        function renderPatternLayer(w, h, imgData) {
+            const step = parseInt(state.resolution);
+            const stepY = step * state.spacingY;
+            const angleRad = state.angle * Math.PI / 180;
+            const cosA = Math.cos(angleRad);
+            const sinA = Math.sin(angleRad);
+            const cx = w / 2;
+            const cy = h / 2;
+            const diag = Math.ceil(Math.sqrt(w*w + h*h));
+            const halfDiag = Math.ceil(diag / 2);
+            const startG = -Math.ceil(halfDiag / step) * step;
+            const endG = Math.ceil(halfDiag / step) * step;
+
+            ctx.fillStyle = state.fgColor;
+            ctx.save();
+            ctx.translate(cx, cy);
+            ctx.rotate(angleRad);
+
+            const drawCapsule = (x, y, cw, ch) => {
+                const r = ch / 2;
+                ctx.beginPath();
+                if (ctx.roundRect) ctx.roundRect(x, y, cw, ch, r);
+                else ctx.rect(x,y,cw,ch);
+                ctx.fill();
+            };
+
+            if (state.effect === 'twelve') {
+                for (let gy = startG; gy <= endG; gy += stepY) {
+                    let activeRun = 0;
+                    for (let gx = startG; gx <= endG + step; gx += step) {
+                        let active = false;
+                        if (gx <= endG) {
+                             const imgX = cx + (gx + step/2) * cosA - (gy + step/2) * sinA;
+                             const imgY = cy + (gx + step/2) * sinA + (gy + step/2) * cosA;
+                             if (imgX >= 0 && imgX < w && imgY >= 0 && imgY < h) {
+                                 const cell = getCellData(imgData, w, h, imgX - step/2, imgY - step/2, step);
+                                 let density = 1 - (cell.brightness / 255); 
+                                 if (state.invert) density = 1 - density;
+                                 density = Math.pow(density, 1 / state.intensity); 
+                                 if(state.dither > 0) density += (Math.random() - 0.5) * state.dither;
+                                 active = density > 0.5;
+                             }
+                        }
+                        if (active) activeRun++;
+                        else {
+                            if (activeRun > 0) {
+                                const startX = gx - activeRun * step;
+                                const width = activeRun * step - 2; 
+                                const height = step - 2;
+                                if (width > 0) drawCapsule(startX + 1, gy + 1, width, height);
+                            }
+                            activeRun = 0;
+                        }
+                    }
+                }
+            } else {
+                for (let gy = startG; gy <= endG; gy += stepY) {
+                    for (let gx = startG; gx <= endG; gx += step) {
+                        const imgX = cx + (gx + step/2) * cosA - (gy + step/2) * sinA;
+                        const imgY = cy + (gx + step/2) * sinA + (gy + step/2) * cosA;
+                        if (imgX >= 0 && imgX < w && imgY >= 0 && imgY < h) {
+                            const cell = getCellData(imgData, w, h, imgX - step/2, imgY - step/2, step);
+                            let density = 1 - (cell.brightness / 255);
+                            if (state.invert) density = 1 - density;
+                            density = Math.pow(density, 1 / state.intensity);
+                            if (state.dither > 0) {
+                                density += (Math.random() - 0.5) * state.dither;
+                                density = Math.max(0, Math.min(1, density));
+                            }
+                            if (state.effect === 'pixel') {
+                                if (density > 0.5) ctx.fillRect(gx, gy, step, step);
+                            } 
+                            else if (state.effect === 'line') {
+                                const height = step * density;
+                                if (height > 0.5) ctx.fillRect(gx, gy + (step - height)/2, step, height);
+                            } 
+                            else { 
+                                const radius = (step / 2) * density;
+                                if (radius > 0.5) {
+                                    ctx.beginPath();
+                                    ctx.arc(gx + step/2, gy + step/2, radius, 0, Math.PI * 2);
+                                    ctx.fill();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            ctx.restore();
+        }
+
+        function getCellData(data, w, h, startX, startY, step) {
+            let r = 0, g = 0, b = 0, count = 0;
+            const sampleRate = Math.max(1, Math.floor(step / 3)); 
+            for (let iy = 0; iy < step; iy+=sampleRate) {
+                for (let ix = 0; ix < step; ix+=sampleRate) {
+                    const cx = Math.floor(startX + ix);
+                    const cy = Math.floor(startY + iy);
+                    if (cx >= 0 && cx < w && cy >= 0 && cy < h) {
+                        const idx = (cy * w + cx) * 4;
+                        r += data[idx];
+                        g += data[idx+1];
+                        b += data[idx+2];
+                        count++;
+                    }
+                }
+            }
+            if (count === 0) return { r:255, g:255, b:255, brightness:255 };
+            r = r/count; g = g/count; b = b/count;
+            const brightness = 0.299*r + 0.587*g + 0.114*b;
+            return { r, g, b, brightness };
+        }
+
+        function generateSVG() {
+            if (!state.source) return '';
+            const w = state.canvasWidth;
+            const h = state.canvasHeight;
+            let srcW = state.mediaType === 'video' ? state.source.videoWidth : state.source.width;
+            let srcH = state.mediaType === 'video' ? state.source.videoHeight : state.source.height;
+            const scaleFit = Math.max(w / srcW, h / srcH); 
+            const scaledW = srcW * scaleFit * state.scale;
+            const scaledH = srcH * scaleFit * state.scale;
+            const offX = (w - scaledW) / 2;
+            const offY = (h - scaledH) / 2;
+
+            const offCanvas = document.createElement('canvas');
+            offCanvas.width = w;
+            offCanvas.height = h;
+            const offCtx = offCanvas.getContext('2d');
+            offCtx.fillStyle = '#ffffff'; 
+            offCtx.fillRect(0, 0, w, h);
+            offCtx.drawImage(state.source, offX, offY, scaledW, scaledH);
+            const data = offCtx.getImageData(0, 0, w, h).data;
+
+            const step = parseInt(state.resolution);
+            const stepY = step * state.spacingY;
+            const angleRad = state.angle * Math.PI / 180;
+            const cosA = Math.cos(angleRad);
+            const sinA = Math.sin(angleRad);
+            const cx = w / 2;
+            const cy = h / 2;
+            const diag = Math.ceil(Math.sqrt(w*w + h*h));
+            const halfDiag = Math.ceil(diag / 2);
+            const startG = -Math.ceil(halfDiag / step) * step;
+            const endG = Math.ceil(halfDiag / step) * step;
+
+            let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">`;
+            
+            if (state.bgMode === 'color') {
+                svgContent += `<rect width="100%" height="100%" fill="${state.bgColor}"/>`;
+            } else if (state.bgMode === 'gradient') {
+                 const defs = `<defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="0%" gradientTransform="rotate(${state.bgGradientAngle})">
+                        <stop offset="0%" stop-color="${state.bgGradientStart}" />
+                        <stop offset="100%" stop-color="${state.bgGradientEnd}" />
+                    </linearGradient>
+                    <radialGradient id="bgRad" cx="50%" cy="50%" r="${50 * state.bgGradientScale}%">
+                        <stop offset="0%" stop-color="${state.bgGradientStart}" />
+                        <stop offset="100%" stop-color="${state.bgGradientEnd}" />
+                    </radialGradient>
+                 </defs>`;
+                 svgContent = svgContent.replace('>', '>' + defs);
+                 const fill = state.bgGradientType === 'linear' ? 'url(#bgGrad)' : 'url(#bgRad)';
+                 svgContent += `<rect width="100%" height="100%" fill="${fill}"/>`;
+            }
+
+            svgContent += `<g transform="translate(${cx}, ${cy}) rotate(${state.angle})">`;
+
+            if (state.effect === 'twelve') {
+                for (let gy = startG; gy <= endG; gy += stepY) {
+                    let activeRun = 0;
+                    for (let gx = startG; gx <= endG + step; gx += step) {
+                        let active = false;
+                        if (gx <= endG) {
+                            const imgX = cx + (gx + step/2) * cosA - (gy + step/2) * sinA;
+                            const imgY = cy + (gx + step/2) * sinA + (gy + step/2) * cosA;
+                            if (imgX >= 0 && imgX < w && imgY >= 0 && imgY < h) {
+                                const cell = getCellData(data, w, h, imgX - step/2, imgY - step/2, step);
+                                let density = 1 - (cell.brightness / 255);
+                                if (state.invert) density = 1 - density;
+                                density = Math.pow(density, 1 / state.intensity);
+                                if(state.dither > 0) density += (Math.random() - 0.5) * state.dither;
+                                active = density > 0.5;
+                            }
+                        }
+                        if (active) activeRun++;
+                        else {
+                            if (activeRun > 0) {
+                                const startX = gx - activeRun * step;
+                                const width = activeRun * step - 2;
+                                const height = step - 2;
+                                const radius = height / 2;
+                                if (width > 0) svgContent += `<rect x="${startX + 1}" y="${gy + 1}" width="${width}" height="${height}" rx="${radius}" ry="${radius}" fill="${state.fgColor}"/>`;
+                            }
+                            activeRun = 0;
+                        }
+                    }
+                }
+            } 
+            else {
+                for (let gy = startG; gy <= endG; gy += stepY) {
+                    for (let gx = startG; gx <= endG; gx += step) {
+                        const imgX = cx + (gx + step/2) * cosA - (gy + step/2) * sinA;
+                        const imgY = cy + (gx + step/2) * sinA + (gy + step/2) * cosA;
+                        if (imgX >= 0 && imgX < w && imgY >= 0 && imgY < h) {
+                            const cell = getCellData(data, w, h, imgX - step/2, imgY - step/2, step);
+                            let density = 1 - (cell.brightness / 255);
+                            if (state.invert) density = 1 - density;
+                            density = Math.pow(density, 1 / state.intensity);
+                            if (state.dither > 0) {
+                                density += (Math.random() - 0.5) * state.dither;
+                                density = Math.max(0, Math.min(1, density));
+                            }
+                            if (state.effect === 'pixel') {
+                                if (density > 0.5) svgContent += `<rect x="${gx}" y="${gy}" width="${step}" height="${step}" fill="${state.fgColor}"/>`;
+                            }
+                            else if (state.effect === 'line') {
+                                const height = step * density;
+                                const offsetY = (step - height) / 2;
+                                if (height > 0.1) {
+                                    svgContent += `<rect x="${gx}" y="${gy + offsetY}" width="${step}" height="${height}" fill="${state.fgColor}"/>`;
+                                }
+                            }
+                            else { 
+                                const radius = (step / 2) * density;
+                                if (radius > 0.1) {
+                                    svgContent += `<circle cx="${gx + step/2}" cy="${gy + step/2}" r="${radius}" fill="${state.fgColor}"/>`;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            svgContent += `</g></svg>`;
+            return svgContent;
+        }
+
+        async function renderVideo() {
+            if (state.mediaType !== 'video' && !state.source && !state.bgSource) return;
+            let duration = 5; 
+            if (state.mediaType === 'video' && state.source && state.source.duration && state.source.duration !== Infinity) {
+                duration = state.source.duration;
+            } else if (state.bgMode === 'image' && state.bgMediaType === 'video' && state.bgSource && state.bgSource.duration && state.bgSource.duration !== Infinity) {
+                 duration = state.bgSource.duration;
+            }
+            ui.renderText.classList.add('hidden');
+            ui.renderSpinner.classList.remove('hidden');
+            ui.renderVideoBtn.disabled = true;
+            const stream = ui.canvas.captureStream(60); 
+            const chunks = [];
+            let mimeType = 'video/webm';
+            if (MediaRecorder.isTypeSupported("video/mp4")) mimeType = "video/mp4";
+            else if (MediaRecorder.isTypeSupported("video/webm;codecs=h264")) mimeType = "video/webm;codecs=h264";
+            const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+            const options = { mimeType, videoBitsPerSecond: 50000000 };
+            const recorder = new MediaRecorder(stream, options);
+            recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+            recorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `rendered-video-${Date.now()}.${ext}`;
+                a.click();
+                ui.renderText.classList.remove('hidden');
+                ui.renderSpinner.classList.add('hidden');
+                ui.renderVideoBtn.disabled = false;
+                state.isVideoPlaying = true;
+                if(state.source && state.source.play) state.source.play().catch(e=>console.log(e));
+                if(state.bgSource && state.bgSource.play) state.bgSource.play().catch(e=>console.log(e));
+                startVideoLoop();
+            };
+            state.isVideoPlaying = false; 
+            cancelAnimationFrame(state.animationId);
+            if(state.source && state.source.currentTime !== undefined) {
+                 state.source.currentTime = 0;
+                 if(state.source.play) state.source.play().catch(e=>console.log(e));
+            }
+            if(state.bgSource && state.bgSource.currentTime !== undefined) {
+                 state.bgSource.currentTime = 0;
+                 if(state.bgSource.play) state.bgSource.play().catch(e=>console.log(e));
+            }
+            recorder.start();
+            const startTime = Date.now();
+            const recordLoop = () => {
+                const elapsed = (Date.now() - startTime) / 1000;
+                if (elapsed >= duration) { recorder.stop(); return; }
+                renderFrame();
+                requestAnimationFrame(recordLoop);
+            };
+            recordLoop();
+        }
+
+        // --- Events & UI Binding ---
+
+        function setupEvents() {
+            const handleDrag = (e) => {
+                e.preventDefault();
+                ui.dragOverlay.style.opacity = (e.type === 'dragover') ? '1' : '0';
+                ui.dragOverlay.style.pointerEvents = (e.type === 'dragover') ? 'auto' : 'none';
+            };
+            window.addEventListener('dragover', handleDrag);
+            window.addEventListener('dragleave', handleDrag);
+            window.addEventListener('drop', (e) => {
+                handleDrag(e);
+                handleFile(e.dataTransfer.files[0]);
+            });
+
+            ui.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+            ui.bgImageInput.addEventListener('change', (e) => handleBgFile(e.target.files[0]));
+
+            ui.removeBgBtn.addEventListener('click', () => {
+                state.bgSource = null;
+                state.bgMediaType = null;
+                ui.bgImageInput.value = '';
+                ui.bgImageName.innerText = "Upload Media";
+                ui.bgHiddenVideo.pause();
+                ui.bgHiddenVideo.src = "";
+                // Force switch to solid color for predictable UX
+                setBgMode('color');
+                renderFrame();
+            });
+
+            ui.removeSourceBtn.addEventListener('click', () => {
+                state.source = null; 
+                state.mediaType = null;
+                ui.fileInput.value = '';
+                ui.fileInfoText.innerText = "JPG, PNG, or MP4";
+                ui.hiddenVideo.pause();
+                ui.hiddenVideo.src = "";
+                state.isVideoPlaying = (state.bgMode === 'image' && state.bgSource && state.bgMediaType === 'video');
+                if (!state.isVideoPlaying) ui.videoControls.classList.add('hidden');
+                ui.renderVideoBtn.disabled = false;
+                renderFrame();
+            });
+
+            ui.canvasSize.addEventListener('change', (e) => {
+                const [w, h] = e.target.value.split('x').map(Number);
+                state.canvasWidth = w;
+                state.canvasHeight = h;
+                if (!state.isVideoPlaying) renderFrame();
+            });
+
+            const updateParam = (key, val, elVal, suffix = '') => {
+                state[key] = val;
+                if (elVal) elVal.innerText = val + suffix;
+                if (!state.isVideoPlaying) renderFrame();
+            };
+
+            ui.resolution.addEventListener('input', (e) => updateParam('resolution', e.target.value, ui.resolutionVal, 'px'));
+            ui.spacingY.addEventListener('input', (e) => updateParam('spacingY', parseFloat(e.target.value), ui.spacingYVal, 'x'));
+            ui.intensity.addEventListener('input', (e) => updateParam('intensity', parseFloat(e.target.value), ui.intensityVal));
+            ui.scale.addEventListener('input', (e) => updateParam('scale', parseFloat(e.target.value), ui.scaleVal, 'x'));
+            ui.angle.addEventListener('input', (e) => updateParam('angle', parseFloat(e.target.value), ui.angleVal, '°'));
+            
+            ui.bgBlur.addEventListener('input', (e) => updateParam('bgBlur', parseFloat(e.target.value), ui.bgBlurVal, 'px'));
+            ui.bgScale.addEventListener('input', (e) => updateParam('bgScale', parseFloat(e.target.value), ui.bgScaleVal, 'x'));
+
+            ui.dither.addEventListener('input', (e) => {
+                state.dither = parseFloat(e.target.value);
+                ui.ditherVal.innerText = Math.round(state.dither * 100) + '%';
+                if (!state.isVideoPlaying) renderFrame();
+            });
+            
+            ui.invert.addEventListener('change', (e) => {
+                state.invert = e.target.checked;
+                if (!state.isVideoPlaying) renderFrame();
+            });
+
+            ui.bgModeBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const mode = e.currentTarget.dataset.mode;
+                    setBgMode(mode);
+                });
+            });
+            
+            const updateGrad = () => {
+                updateGradUI();
+                state.bgGradientType = ui.gradType.value;
+                if(state.bgMode === 'gradient') renderFrame();
+            };
+            ui.gradType.addEventListener('change', updateGrad);
+            ui.gradAngle.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                if (state.bgGradientType === 'radial') {
+                     state.bgGradientScale = val;
+                     ui.gradParamValue.innerText = val.toFixed(1) + 'x';
+                } else {
+                     state.bgGradientAngle = parseInt(val);
+                     ui.gradParamValue.innerText = parseInt(val) + '°';
+                }
+                if(state.bgMode === 'gradient') renderFrame();
+            });
+
+            ui.gradStartGroup.addEventListener('click', () => setActiveGradStop('start'));
+            ui.gradEndGroup.addEventListener('click', () => setActiveGradStop('end'));
+
+            ui.gradStart.addEventListener('input', (e) => updateColorState('bgGradientStart', e.target.value, ui.gradStartPreview, ui.gradStartInput));
+            ui.gradEnd.addEventListener('input', (e) => updateColorState('bgGradientEnd', e.target.value, ui.gradEndPreview, ui.gradEndInput));
+
+            ui.gradSwapBtn.addEventListener('click', () => {
+                const s = state.bgGradientStart;
+                const e = state.bgGradientEnd;
+                updateColorState('bgGradientStart', e, ui.gradStartPreview, ui.gradStartInput);
+                updateColorState('bgGradientEnd', s, ui.gradEndPreview, ui.gradEndInput);
+            });
+
+            ui.fgColor.addEventListener('input', (e) => updateColorState('fgColor', e.target.value, ui.fgColorPreview, ui.fgColorInput));
+            ui.bgColor.addEventListener('input', (e) => updateColorState('bgColor', e.target.value, ui.bgColorPreview, ui.bgColorInput));
+
+            ui.effectBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    ui.effectBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    state.effect = btn.dataset.effect;
+                    if (!state.isVideoPlaying) renderFrame();
+                });
+            });
+
+            ui.downloadBtn.addEventListener('click', () => {
+                ui.canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.download = `fx-export-${Date.now()}.png`;
+                    link.href = url;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                }, 'image/png');
+            });
+
+            ui.exportSvgBtn.addEventListener('click', () => {
+                const svgString = generateSVG();
+                const blob = new Blob([svgString], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = `fx-vector-${Date.now()}.svg`;
+                link.href = url;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            });
+
+            ui.renderVideoBtn.addEventListener('click', renderVideo);
+        }
+
+        init();
+
+    </script>
+</body>
+</html>
