@@ -190,6 +190,62 @@
             opacity: 1;
             pointer-events: auto;
         }
+
+        .mobile-export-btn {
+            min-width: 50px;
+            height: 28px;
+            border: 1px solid #3f3f46;
+            background: transparent;
+            color: #e4e4e7;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0 8px;
+            transition: all 0.2s ease;
+        }
+        .mobile-export-btn:hover {
+            border-color: #ffffff;
+            color: #ffffff;
+        }
+
+        @media (max-width: 767px) {
+            :root {
+                --mobile-header-h: 88px;
+                --mobile-preview-h: 180px;
+            }
+
+            aside {
+                height: 100vh;
+            }
+
+            .mobile-header {
+                position: sticky;
+                top: 0;
+                z-index: 40;
+                background: var(--bg-panel);
+            }
+
+            #dropZone {
+                position: fixed;
+                top: var(--mobile-header-h);
+                left: 0;
+                right: 0;
+                height: var(--mobile-preview-h);
+                z-index: 30;
+                border-top: 1px solid var(--border-subtle);
+                border-bottom: 1px solid var(--border-subtle);
+            }
+
+            #dropZone #canvas {
+                max-width: 96%;
+                max-height: 92%;
+            }
+
+            .sidebar-scroll {
+                padding-top: calc(var(--mobile-preview-h) + 16px);
+            }
+        }
     </style>
 </head>
 <body class="flex flex-col md:flex-row h-screen selection:bg-white selection:text-black">
@@ -203,8 +259,13 @@
     <aside class="w-full md:w-80 bg-[var(--bg-panel)] border-r border-[var(--border-subtle)] flex flex-col z-20 shadow-2xl overflow-hidden">
         
         <!-- Header -->
-        <div class="p-6 border-b border-[var(--border-subtle)] flex items-center flex-shrink-0">
+        <div class="mobile-header p-6 border-b border-[var(--border-subtle)] flex items-center justify-between gap-3 flex-shrink-0">
             <img src="/logo.svg" alt="Finoverse Design" class="h-10 w-auto">
+            <div class="flex items-center gap-1 md:hidden">
+                <button id="exportSvgBtnMobile" class="mobile-export-btn">SVG</button>
+                <button id="downloadBtnMobile" class="mobile-export-btn">PNG</button>
+                <button id="renderVideoBtnMobile" class="mobile-export-btn">MP4</button>
+            </div>
         </div>
 
         <div class="sidebar-scroll p-6 space-y-7 flex-1 overflow-y-auto">
@@ -480,7 +541,7 @@
         </div>
 
         <!-- Footer Actions -->
-        <div class="p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-panel)] space-y-3 flex-shrink-0">
+        <div class="hidden md:block p-6 border-t border-[var(--border-subtle)] bg-[var(--bg-panel)] space-y-3 flex-shrink-0">
             <button id="exportSvgBtn" class="w-full py-3 bg-white hover:bg-zinc-200 text-black font-bold uppercase tracking-wide rounded-none text-xs transition shadow-lg flex items-center justify-center gap-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 <span>SVG</span>
@@ -650,6 +711,9 @@
             downloadBtn: document.getElementById('downloadBtn'),
             exportSvgBtn: document.getElementById('exportSvgBtn'),
             renderVideoBtn: document.getElementById('renderVideoBtn'),
+            exportSvgBtnMobile: document.getElementById('exportSvgBtnMobile'),
+            downloadBtnMobile: document.getElementById('downloadBtnMobile'),
+            renderVideoBtnMobile: document.getElementById('renderVideoBtnMobile'),
             renderText: document.getElementById('renderText'),
             renderSpinner: document.getElementById('renderSpinner'),
 
@@ -1579,6 +1643,18 @@
             });
 
             ui.renderVideoBtn.addEventListener('click', renderVideo);
+
+            if (ui.exportSvgBtnMobile) {
+                ui.exportSvgBtnMobile.addEventListener('click', () => ui.exportSvgBtn.click());
+            }
+            if (ui.downloadBtnMobile) {
+                ui.downloadBtnMobile.addEventListener('click', () => ui.downloadBtn.click());
+            }
+            if (ui.renderVideoBtnMobile) {
+                ui.renderVideoBtnMobile.addEventListener('click', () => {
+                    if (!ui.renderVideoBtn.disabled) ui.renderVideoBtn.click();
+                });
+            }
         }
 
         init();
